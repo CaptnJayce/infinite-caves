@@ -27,6 +27,9 @@ public class PerlinNoiseMap : MonoBehaviour
     int yOffset = 0; 
 
     void Start() {        
+        xOffset = Random.Range(0, 1000);
+        yOffset = Random.Range(0, 1000);
+        
         CreateTileSets();
         CreateFrequency();
         CreateTileGroup();
@@ -70,11 +73,10 @@ public class PerlinNoiseMap : MonoBehaviour
 
             for(int y = 0; y < mapHeight; y++) {
                 int tileid = PerlinCave(x, y);
-                Debug.Log(tileid);
                 if (tileid == 0) {
                     tileid = 1;
                 }
-                noiseGrid[x].Add(tileid);
+                 noiseGrid[x].Add(tileid);
                 CreateTile(tileid, x, y);
             }
         }

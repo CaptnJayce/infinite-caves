@@ -70,6 +70,10 @@ public class PerlinNoiseMap : MonoBehaviour
 
             for(int y = 0; y < mapHeight; y++) {
                 int tileid = PerlinCave(x, y);
+                Debug.Log(tileid);
+                if (tileid == 0) {
+                    tileid = 1;
+                }
                 noiseGrid[x].Add(tileid);
                 CreateTile(tileid, x, y);
             }

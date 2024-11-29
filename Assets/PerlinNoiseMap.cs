@@ -6,6 +6,7 @@ public class PerlinNoiseMap : MonoBehaviour
 {
     Dictionary<int, GameObject> tileset;
     Dictionary<int, GameObject> tilegroups;
+    Dictionary<int, (float min, float max)> tilefrequency;
 
     public GameObject prefabAir;
     public GameObject prefabStone;
@@ -26,20 +27,21 @@ public class PerlinNoiseMap : MonoBehaviour
     int yOffset = 0; 
 
     void Start() {        
-        CreateTileSet();
+        CreateTileSets();
+        CreateFrequency();
         CreateTileGroup();
         GenerateMap();
         GenerateAirMap();
     }
 
-    void CreateTileSet() {
+    void CreateTileSets() {
         tileset = new Dictionary<int, GameObject>
         {
             { 0, prefabAir },
             { 1, prefabStone },
             { 2, prefabObsidian },
             { 3, prefabLava },
-        };        
+        };
     }
 
     void CreateTileGroup() {
@@ -50,6 +52,15 @@ public class PerlinNoiseMap : MonoBehaviour
             tilegroup.transform.localPosition = new Vector3(0, 0, 0);
             tilegroups.Add(prefab_pair.Key, tilegroup);
         }
+    }
+
+    void CreateFrequency() {
+        tilefrequency = new Dictionary<int, (float min, float max)> {
+            { 0, (0.0f, 0.4f) },  // Air: 40% frequency
+            { 1, (0.4f, 0.7f) },  // Stone: 30% frequency
+            { 2, (0.7f, 0.9f) },  // Obsidian: 20% frequency
+            { 3, (0.9f, 1.0f) }   // Lava: 10% frequency
+        };
     }
 
     void GenerateMap() {
@@ -64,51 +75,45 @@ public class PerlinNoiseMap : MonoBehaviour
             }
         }
     }
-
+    
     void GenerateAirMap() {
         for (int x = 0; x < mapWidth; x++) {
             noiseAir.Add(new List<int>());
             airgrid.Add(new List<GameObject>());
 
             for (int y = 0; y < mapHeight; y++) {
-                int tileid = PerlinAir(x, y);
-            
-                if (tileid == 3) {
+                int airTileId = PerlinAir(x, y);
+
+                if (airTileId == 0) { 
                     if (tilegrid[x][y] != null) {
-                        Destroy(tilegrid[x][y]); 
-                        tilegrid[x][y] = null; 
+                        Destroy(tilegrid[x][y]);
+                        tilegrid[x][y] = null;
                     }
                 }
-            
-                if (tilegrid[x][y] == null) {
-                    CreateTile(tileid, x, y);
-                }
-            
-                noiseAir[x].Add(tileid);
+
+                noiseAir[x].Add(airTileId);
             }
         }
     }
 
     int PerlinCave(int x, int y) {
         float raw = Mathf.PerlinNoise((x - xOffset) / zoom, (y - yOffset) / zoom);
-        float clamp = Mathf.Clamp01(raw);
-        float scale = clamp * tileset.Count;
-        
-        if(scale == 4) {
-            scale = 3;
-        }
-        return Mathf.FloorToInt(scale);
+        return GetTileIdFromNoise(raw);
     }
 
     int PerlinAir(int x, int y) {
-        float raw = Mathf.PerlinNoise((x - xOffset) / zoom, (y - yOffset) / zoom);
-        float clamp = Mathf.Clamp01(raw);
-        float scale = clamp * tileset.Count;
-        
-        if(scale >= 2.5f) {
-            scale = 0;
+        float raw = Mathf.PerlinNoise((x - (xOffset + 100)) / (zoom * 1.5f), (y - (yOffset + 100)) / (zoom * 1.5f));
+        return GetTileIdFromNoise(raw);
+    }
+
+    int GetTileIdFromNoise(float noiseValue) {
+        float clamp = Mathf.Clamp01(noiseValue);
+        foreach (var entry in tilefrequency) {
+            if (clamp >= entry.Value.min && clamp < entry.Value.max) {
+                return entry.Key;
+            }
         }
-        return Mathf.FloorToInt(scale);
+        return 0;
     }
 
     void CreateTile(int tileid, int x, int y) {

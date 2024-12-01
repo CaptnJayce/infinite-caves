@@ -13,8 +13,8 @@ public class PerlinNoiseMap : MonoBehaviour
     public GameObject prefabObsidian;
     public GameObject prefabLava;
 
-    int mapWidth = 256;
-    int mapHeight = 512;
+    int mapWidth = 128;
+    int mapHeight = 128;
 
     List<List<int>> noiseGrid = new List<List<int>>();
     List<List<GameObject>> tilegrid = new List<List<GameObject>>();
@@ -76,7 +76,7 @@ public class PerlinNoiseMap : MonoBehaviour
                 if (tileid == 0) {
                     tileid = 1;
                 }
-                 noiseGrid[x].Add(tileid);
+                noiseGrid[x].Add(tileid);
                 CreateTile(tileid, x, y);
             }
         }
@@ -123,12 +123,18 @@ public class PerlinNoiseMap : MonoBehaviour
     }
 
     void CreateTile(int tileid, int x, int y) {
-        GameObject tileprefab = tileset[tileid];
-        GameObject tilegroup = tilegroups[tileid];
-        GameObject tile = Instantiate(tileprefab, tilegroup.transform);
+        GameObject tilePrefab = tileset[tileid];
+        GameObject tileGroup = tilegroups[tileid];
+        GameObject tile = Instantiate(tilePrefab, tileGroup.transform);
 
         tile.name = string.Format("tile_x{0}_y{1}", x, y);
         tile.transform.localPosition = new Vector3(x, y, 0);
+
+        if (tileid != 0) {
+            if (tile.GetComponent<Collider2D>() == null) {
+                tile.AddComponent<BoxCollider2D>();
+            }
+        }
 
         tilegrid[x].Add(tile);
     }

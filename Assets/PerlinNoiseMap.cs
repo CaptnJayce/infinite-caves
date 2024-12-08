@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class PerlinNoiseMap : MonoBehaviour
@@ -126,8 +127,9 @@ public class PerlinNoiseMap : MonoBehaviour
         GameObject tilePrefab = tileset[tileid];
         GameObject tileGroup = tilegroups[tileid];
         GameObject tile = Instantiate(tilePrefab, tileGroup.transform);
-
+        
         tile.name = string.Format("tile_x{0}_y{1}", x, y);
+        tile.layer = LayerMask.NameToLayer("Ground");
         tile.transform.localPosition = new Vector3(x, y, 0);
 
         if (tileid != 0) {

@@ -53,6 +53,13 @@ public class PerlinNoiseMap : MonoBehaviour
                 GameObject tile = tilegrid[tileX][tileY];
                 
                 if (tile != null) {
+                    int tileID = noiseGrid[tileX][tileY];
+
+                    if (tileID == 2 || tileID == 3) {
+                        Debug.Log($"Cannot break tile at ({tileX}, {tileY})");
+                        return;
+                    }
+
                     Destroy(tile);
                     tilegrid[tileX][tileY] = null;
                     Debug.Log($"Mined tile at ({tileX}, {tileY})");

@@ -25,7 +25,7 @@ public class PerlinNoiseMap : MonoBehaviour
 
     float zoom = 16.0f;
     int xOffset = 0;
-    int yOffset = 0; 
+    int yOffset = 0;
 
     void Start() {        
         xOffset = Random.Range(0, 1000);
@@ -36,6 +36,29 @@ public class PerlinNoiseMap : MonoBehaviour
         CreateTileGroup();
         GenerateMap();
         GenerateAirMap();
+    }
+
+    void Update() {
+        MineTile();
+    }
+
+    void MineTile() {
+        if (Input.GetMouseButton(0)) {
+            Vector2 worldMousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+            int tileX = Mathf.RoundToInt(worldMousePos.x);
+            int tileY = Mathf.RoundToInt(worldMousePos.y);
+
+            if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
+                GameObject tile = tilegrid[tileX][tileY];
+                
+                if (tile != null) {
+                    Destroy(tile);
+                    tilegrid[tileX][tileY] = null;
+                    Debug.Log($"Mined tile at ({tileX}, {tileY})");
+                }
+            }
+        }
     }
 
     void CreateTileSets() {

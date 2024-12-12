@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -8,21 +9,20 @@ public class Player : MonoBehaviour
     private float jumpingPower = 16f;
     private bool isFacingRight = true;
 
+    private PerlinNoiseMap list;
     Vector2 startPos;
 
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private LayerMask groundLayer;
 
-    private void Awake()
-    {
+    private void Awake() {
         startPos = transform.position;
     }
 
     public void Die() {
         transform.position = startPos;
     }
-
 
     void Update()
     {

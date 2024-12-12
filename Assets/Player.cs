@@ -10,18 +10,14 @@ public class Player : MonoBehaviour
     private bool isFacingRight = true;
 
     private PerlinNoiseMap list;
-    Vector2 startPos;
+    public Vector2 playerPos;
 
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private LayerMask groundLayer;
 
     private void Awake() {
-        startPos = transform.position;
-    }
-
-    public void Die() {
-        transform.position = startPos;
+        playerPos = transform.position;
     }
 
     void Update()

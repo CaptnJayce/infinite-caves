@@ -42,27 +42,37 @@ public class PerlinNoiseMap : MonoBehaviour
         MineTile();
     }
 
-    void MineTile() {
+    void MineTile() {  
         if (Input.GetMouseButton(0)) {
             Vector2 worldMousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Vector2 playerDist = GameObject.Find("Player").transform.position;
+            
+            var diff = worldMousePos - playerDist;
+        
+            // check if tile is out of range
+            if (Mathf.Abs(diff.x) > 10 || Mathf.Abs(diff.y) > 10) {
+                // Debug.Log("Tile is out of range!");
+                return; 
+            }
 
+            // round coords to center on the mouse cursor
             int tileX = Mathf.RoundToInt(worldMousePos.x);
             int tileY = Mathf.RoundToInt(worldMousePos.y);
 
             if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
                 GameObject tile = tilegrid[tileX][tileY];
-                
+
                 if (tile != null) {
                     int tileID = noiseGrid[tileX][tileY];
 
                     if (tileID == 2 || tileID == 3) {
-                        Debug.Log($"Cannot break tile at ({tileX}, {tileY})");
+                        //Debug.Log($"Cannot break tile at ({tileX}, {tileY})");
                         return;
                     }
 
                     Destroy(tile);
                     tilegrid[tileX][tileY] = null;
-                    Debug.Log($"Mined tile at ({tileX}, {tileY})");
+                    //Debug.Log($"Mined tile at ({tileX}, {tileY})");
                 }
             }
         }

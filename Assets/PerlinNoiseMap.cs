@@ -26,8 +26,6 @@ public class PerlinNoiseMap : MonoBehaviour
     }
 
     void Update() {
-        MineTile();
-
         Vector2 playerPos = GameObject.Find("Player").transform.position;
         Vector2Int playerChunk = GetChunkCoordinates(playerPos);
 
@@ -80,8 +78,10 @@ public class PerlinNoiseMap : MonoBehaviour
                 int worldX = chunkCoords.x * chunkSize + x;
                 int worldY = chunkCoords.y * chunkSize + y;
 
-                int tileid = PerlinCave(worldX, worldY);
-                CreateTile(tileid, worldX, worldY, chunk.transform);
+                if (worldY < 100) {
+                    int tileid = PerlinCave(worldX, worldY);
+                    CreateTile(tileid, worldX, worldY, chunk.transform);
+                }
             }
         }
 

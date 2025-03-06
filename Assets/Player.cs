@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -9,16 +7,9 @@ public class Player : MonoBehaviour
     private float jumpingPower = 16f;
     private bool isFacingRight = true;
 
-    private PerlinNoiseMap list;
-    public Vector2 playerPos;
-
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private LayerMask groundLayer;
-
-    private void Awake() {
-        playerPos = transform.position;
-    }
 
     void Update()
     {
@@ -26,12 +17,12 @@ public class Player : MonoBehaviour
 
         if (Input.GetButtonDown("Jump") && IsGrounded())
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpingPower);
+            rb.linearVelocity  = new Vector2(rb.linearVelocity .x, jumpingPower);
         }
 
-        if (Input.GetButtonUp("Jump") && rb.linearVelocity.y > 0f)
+        if (Input.GetButtonUp("Jump") && rb.linearVelocity .y > 0f)
         {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * 0.5f);
+            rb.linearVelocity  = new Vector2(rb.linearVelocity .x, rb.linearVelocity .y * 0.5f);
         }
 
         Flip();
@@ -39,7 +30,7 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
-        rb.linearVelocity = new Vector2(horizontal * speed, rb.linearVelocity.y);
+        rb.linearVelocity  = new Vector2(horizontal * speed, rb.linearVelocity .y);
     }
 
     private bool IsGrounded()

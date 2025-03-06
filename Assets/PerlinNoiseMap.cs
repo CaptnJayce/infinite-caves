@@ -12,81 +12,80 @@ public class PerlinNoiseMap : MonoBehaviour
     public GameObject prefabObsidian;
     public GameObject prefabLava;
 
-    int mapWidth = 128;
-    int mapHeight = 128;
-
-    List<List<int>> noiseGrid = new List<List<int>>();
-    List<List<GameObject>> tilegrid = new List<List<GameObject>>();
-
-    float zoom = 16.0f;
-    int xOffset = 0;
-    int yOffset = 0;
-
-    private int bufferRadius = 30;
-    private Vector2 lastPlayerPos;
+    private int chunkSize = 16;
+    private Dictionary<Vector2Int, GameObject> chunks = new Dictionary<Vector2Int, GameObject>();
+    private float zoom = 16.0f;
+    private int loadRadius = 2;
+    private Vector2Int lastPlayerChunk;
 
     void Start() {
-        xOffset = Random.Range(0, 1000);
-        yOffset = Random.Range(0, 1000);
-
         CreateTileSets();
         CreateFrequency();
         CreateTileGroup();
-        InitializeGrids();
-        lastPlayerPos = Vector2.zero;
+        lastPlayerChunk = new Vector2Int(int.MaxValue, int.MaxValue);
     }
 
     void Update() {
         MineTile();
 
         Vector2 playerPos = GameObject.Find("Player").transform.position;
+        Vector2Int playerChunk = GetChunkCoordinates(playerPos);
 
-        if (Vector2.Distance(playerPos, lastPlayerPos) > 1.0f) {
-            LoadTilesAroundPlayer(playerPos);
-            UnloadTilesOutsideRadius(playerPos);
-            lastPlayerPos = playerPos;
+        if (playerChunk != lastPlayerChunk) {
+            LoadChunksAroundPlayer(playerChunk);
+            UnloadDistantChunks(playerChunk);
+            lastPlayerChunk = playerChunk;
         }
     }
 
-    void InitializeGrids() {
-        for (int x = 0; x < mapWidth; x++) {
-            noiseGrid.Add(new List<int>());
-            tilegrid.Add(new List<GameObject>());
-
-            for (int y = 0; y < mapHeight; y++) {
-                noiseGrid[x].Add(0);
-                tilegrid[x].Add(null);
-            }
-        }
+    Vector2Int GetChunkCoordinates(Vector2 position) {
+        int chunkX = Mathf.FloorToInt(position.x / chunkSize);
+        int chunkY = Mathf.FloorToInt(position.y / chunkSize);
+        return new Vector2Int(chunkX, chunkY);
     }
 
-    void LoadTilesAroundPlayer(Vector2 playerPos) {
-        int startX = Mathf.Clamp(Mathf.FloorToInt(playerPos.x) - bufferRadius, 0, mapWidth - 1);
-        int endX = Mathf.Clamp(Mathf.FloorToInt(playerPos.x) + bufferRadius, 0, mapWidth - 1);
-        int startY = Mathf.Clamp(Mathf.FloorToInt(playerPos.y) - bufferRadius, 0, mapHeight - 1);
-        int endY = Mathf.Clamp(Mathf.FloorToInt(playerPos.y) + bufferRadius, 0, mapHeight - 1);
+    void LoadChunksAroundPlayer(Vector2Int playerChunk) {
+        for (int x = playerChunk.x - loadRadius; x <= playerChunk.x + loadRadius; x++) {
+            for (int y = playerChunk.y - loadRadius; y <= playerChunk.y + loadRadius; y++) {
+                Vector2Int chunkCoords = new Vector2Int(x, y);
 
-        for (int x = startX; x <= endX; x++) {
-            for (int y = startY; y <= endY; y++) {
-                if (tilegrid[x][y] == null) {
-                    int tileid = PerlinCave(x, y);
-                    CreateTile(tileid, x, y);
+                if (!chunks.ContainsKey(chunkCoords)) {
+                    GenerateChunk(chunkCoords);
                 }
             }
         }
     }
 
-    void UnloadTilesOutsideRadius(Vector2 playerPos) {
-        for (int x = 0; x < mapWidth; x++) {
-            for (int y = 0; y < mapHeight; y++) {
-                if (tilegrid[x][y] != null) {
-                    if (Mathf.Abs(x - playerPos.x) > bufferRadius || Mathf.Abs(y - playerPos.y) > bufferRadius) {
-                        Destroy(tilegrid[x][y]);
-                        tilegrid[x][y] = null;
-                    }
-                }
+    void UnloadDistantChunks(Vector2Int playerChunk) {
+        List<Vector2Int> chunksToUnload = new List<Vector2Int>();
+
+        foreach (var chunk in chunks) {
+            if (Mathf.Abs(chunk.Key.x - playerChunk.x) > loadRadius || Mathf.Abs(chunk.Key.y - playerChunk.y) > loadRadius) {
+                chunksToUnload.Add(chunk.Key);
             }
         }
+
+        foreach (var chunkCoords in chunksToUnload) {
+            Destroy(chunks[chunkCoords]);
+            chunks.Remove(chunkCoords);
+        }
+    }
+
+    void GenerateChunk(Vector2Int chunkCoords) {
+        GameObject chunk = new GameObject($"Chunk_{chunkCoords.x}_{chunkCoords.y}");
+        chunk.transform.parent = transform;
+
+        for (int x = 0; x < chunkSize; x++) {
+            for (int y = 0; y < chunkSize; y++) {
+                int worldX = chunkCoords.x * chunkSize + x;
+                int worldY = chunkCoords.y * chunkSize + y;
+
+                int tileid = PerlinCave(worldX, worldY);
+                CreateTile(tileid, worldX, worldY, chunk.transform);
+            }
+        }
+
+        chunks.Add(chunkCoords, chunk);
     }
 
     void MineTile() {
@@ -103,18 +102,14 @@ public class PerlinNoiseMap : MonoBehaviour
             int tileX = Mathf.RoundToInt(worldMousePos.x);
             int tileY = Mathf.RoundToInt(worldMousePos.y);
 
-            if (tileX >= 0 && tileX < mapWidth && tileY >= 0 && tileY < mapHeight) {
-                GameObject tile = tilegrid[tileX][tileY];
+            Vector2Int chunkCoords = GetChunkCoordinates(new Vector2(tileX, tileY));
+
+            if (chunks.ContainsKey(chunkCoords)) {
+                GameObject chunk = chunks[chunkCoords];
+                Transform tile = chunk.transform.Find($"tile_x{tileX}_y{tileY}");
 
                 if (tile != null) {
-                    int tileID = noiseGrid[tileX][tileY];
-
-                    if (tileID == 2 || tileID == 3) {
-                        return;
-                    }
-
-                    Destroy(tile);
-                    tilegrid[tileX][tileY] = null;
+                    Destroy(tile.gameObject);
                 }
             }
         }
@@ -134,7 +129,7 @@ public class PerlinNoiseMap : MonoBehaviour
         tilegroups = new Dictionary<int, GameObject>();
         foreach (KeyValuePair<int, GameObject> prefab_pair in tileset) {
             GameObject tilegroup = new GameObject(prefab_pair.Value.name);
-            tilegroup.transform.parent = gameObject.transform;
+            tilegroup.transform.parent = transform;
             tilegroup.transform.localPosition = new Vector3(0, 0, 0);
             tilegroups.Add(prefab_pair.Key, tilegroup);
         }
@@ -150,7 +145,7 @@ public class PerlinNoiseMap : MonoBehaviour
     }
 
     int PerlinCave(int x, int y) {
-        float raw = Mathf.PerlinNoise((x - xOffset) / zoom, (y - yOffset) / zoom);
+        float raw = Mathf.PerlinNoise(x / zoom, y / zoom);
         return GetTileIdFromNoise(raw);
     }
 
@@ -164,12 +159,11 @@ public class PerlinNoiseMap : MonoBehaviour
         return 0;
     }
 
-    void CreateTile(int tileid, int x, int y) {
+    void CreateTile(int tileid, int x, int y, Transform parent) {
         GameObject tilePrefab = tileset[tileid];
-        GameObject tileGroup = tilegroups[tileid];
-        GameObject tile = Instantiate(tilePrefab, tileGroup.transform);
+        GameObject tile = Instantiate(tilePrefab, parent);
 
-        tile.name = string.Format("tile_x{0}_y{1}", x, y);
+        tile.name = $"tile_x{x}_y{y}";
         tile.layer = LayerMask.NameToLayer("Ground");
         tile.transform.localPosition = new Vector3(x, y, 0);
 
@@ -178,8 +172,5 @@ public class PerlinNoiseMap : MonoBehaviour
                 tile.AddComponent<BoxCollider2D>();
             }
         }
-
-        tilegrid[x][y] = tile;
-        noiseGrid[x][y] = tileid;
     }
 }
